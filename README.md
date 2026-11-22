@@ -2,7 +2,7 @@
 
 An event-only [MCP](https://modelcontextprotocol.io) server that watches GitHub and GitHub Enterprise notifications through the `gh` CLI and emits [MCP Events](https://modelcontextprotocol.io/extensions/events/overview). Orbit can wake when a review is requested, CI fails, an issue is assigned or someone mentions you, instead of polling through the model.
 
-> **Status: early.** The events layer, the CLI and the daemon are in place; the notifications poller lands next. See the issues.
+> **Status: early.** The events layer, the CLI, the daemon and the notifications poller are in place. The Windows installer and upgrade flow still need a real Windows pass; see [`docs/windows-checklist.md`](docs/windows-checklist.md).
 
 ## Why it is different
 
@@ -35,7 +35,7 @@ github-events-mcp version
 |---|---|
 | `github.pr.review_requested` | reason `review_requested` |
 | `github.pr.comment` | PullRequest, reason `comment`, `author` or `subscribed` |
-| `github.pr.ci_failed` | reason `ci_activity` |
+| `github.pr.ci_failed` | reason `ci_activity` (GitHub does not say pass/fail; see the notes) |
 | `github.issue.assigned` | Issue, reason `assign` |
 | `github.issue.comment` | Issue, reason `comment`, `author` or `subscribed` |
 | `github.mention` | reason `mention` or `team_mention` |
