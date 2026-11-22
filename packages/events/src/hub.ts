@@ -397,7 +397,7 @@ class GroupLoop {
   private schedule(ms: number): void {
     if (this.stopped) return;
     if (this.timer) clearTimeout(this.timer);
-    const delay = clamp(Math.floor(ms), this.limits.minPollMs, this.limits.maxPollMs);
+    const delay = ms <= 0 ? 0 : clamp(Math.floor(ms), this.limits.minPollMs, this.limits.maxPollMs);
     this.timer = setTimeout(() => {
       this.timer = undefined;
       void this.tick();
