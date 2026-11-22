@@ -84,7 +84,14 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<Check[]> {
         fix: process.platform === "win32" ? "reset the file ACL to the current user" : `chmod 600 "${tokenFile}"`,
       });
     } else {
-      checks.push({ name: "token permission", level: "pass", detail: "readable by the current user only" });
+      checks.push({
+        name: "token permission",
+        level: "pass",
+        detail:
+          process.platform === "win32"
+            ? "under the per-user LocalAppData folder (ACL not inspected)"
+            : "readable by the current user only",
+      });
     }
   }
 
