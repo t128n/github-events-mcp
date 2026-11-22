@@ -1,4 +1,4 @@
-import type { ProcessRunner } from "./process.ts";
+import type { ProcessRunner } from "../platform/process.ts";
 
 export interface GhHost {
   host: string;

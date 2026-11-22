@@ -21,10 +21,22 @@ jobs:
       - run: bun test
       - run: bunx tsc --noEmit
 
+  windows-test:
+    name: Test and typecheck on Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.x
+      - run: bun install --frozen-lockfile
+      - run: bun test
+      - run: bunx tsc --noEmit
+
   windows-exe:
     name: Cross-compile the Windows exe
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test, windows-test]
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -33,10 +45,6 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Build
         run: |
-          if [ ! -f src/main.ts ]; then
-            echo "src/main.ts is added by the CLI PR; nothing to compile yet." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
           mkdir -p dist
           bun build --compile --target=bun-windows-x64 --windows-hide-console --outfile=dist/github-events-mcp.exe src/main.ts
           ls -l dist
@@ -44,4 +52,4 @@ jobs:
         with:
           name: github-events-mcp-windows-x64
           path: dist/github-events-mcp.exe
-          if-no-files-found: ignore
+          if-no-files-found: error

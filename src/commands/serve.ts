@@ -2,7 +2,8 @@ import { configPath, readSecret, tokenPath } from "../config/home.ts";
 import { readConfig } from "../config/config.ts";
 import { booleanFlag, fail, out, parseFlags, stringFlag } from "../cli.ts";
 import { startDaemon } from "../daemon/daemon.ts";
-import { emptySource, type SourceFactory } from "../daemon/source.ts";
+import { type SourceFactory } from "../daemon/source.ts";
+import { createGithubSource } from "../github/source.ts";
 
 const FLAGS = {
   port: { type: "string", arg: "port", description: "listen on this port instead of the config's" },
@@ -42,7 +43,7 @@ export async function serveCommand(args: string[], options: ServeOptions = {}): 
     daemon = startDaemon({
       config: { ...config, port },
       token,
-      factory: options.factory ?? emptySource,
+      factory: options.factory ?? ((config) => createGithubSource(config)),
       configFile,
       watchConfig: !booleanFlag(parsed.values, "no-watch"),
       log: (message) => out(message),

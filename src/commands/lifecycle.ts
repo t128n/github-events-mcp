@@ -3,6 +3,7 @@ import { dirname } from "node:path";
 import { compareVersions, VERSION } from "../version.ts";
 import { configDir, installedExe, installDir, stateDir } from "../config/home.ts";
 import { isCompiled, isWindows, type Scheduler } from "../platform/index.ts";
+import { TASK_NAME } from "../platform/scheduler.ts";
 import { removeFile, replaceFile } from "../platform/files.ts";
 import { processRunner, type ProcessRunner } from "../platform/process.ts";
 import { booleanFlag, fail, out, parseFlags, stringFlag } from "../cli.ts";
@@ -156,7 +157,7 @@ export async function installCommand(args: string[], scheduler: Scheduler): Prom
     return fail((error as Error).message);
   }
   out(`Installed ${installedExe()}`);
-  out(`Registered the logon task "${scheduler.name}" for ${scheduler.currentUser()}.`);
+  out(`Registered the logon task "${TASK_NAME}" for ${scheduler.currentUser()}.`);
   if (booleanFlag(parsed.values, "no-start")) out("Not started (--no-start). Start it with: github-events-mcp install");
   else out("Started. The daemon runs now and again at every sign-in.");
   return 0;

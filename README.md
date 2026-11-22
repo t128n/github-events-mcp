@@ -2,7 +2,7 @@
 
 An event-only [MCP](https://modelcontextprotocol.io) server that watches GitHub and GitHub Enterprise notifications through the `gh` CLI and emits [MCP Events](https://modelcontextprotocol.io/extensions/events/overview). Orbit can wake when a review is requested, CI fails, an issue is assigned or someone mentions you, instead of polling through the model.
 
-> **Status: early.** The events layer, the CLI and the daemon are in place; the notifications poller lands next. See the issues.
+> **Status: early.** The events layer, the CLI, the daemon and the notifications poller are in place. The Windows installer and upgrade flow still need a real Windows pass; see [`docs/windows-checklist.md`](docs/windows-checklist.md).
 
 ## Why it is different
 
@@ -11,6 +11,14 @@ An event-only [MCP](https://modelcontextprotocol.io) server that watches GitHub 
 - **Polling with conditional requests.** It honors `ETag`, `Last-Modified`, `X-Poll-Interval` and `Retry-After`, and never polls faster than the configured floor.
 - **Subscriptions, not a firehose.** Nothing is watched until you run `subscribe`. A notification becomes an event only when its repository matches a subscription on that host.
 - **One executable.** TypeScript on Bun, compiled to a single Windows `.exe`, with a per-user logon task. `serve` also runs on macOS and Linux for development.
+
+## Install
+
+```sh
+mise use -g github:t128n/github-events-mcp@0.1.0
+```
+
+The release attaches `github-events-mcp-windows-x64.exe`; mise installs it as `github-events-mcp`. See [`docs/install.md`](docs/install.md).
 
 ## Commands
 
@@ -35,7 +43,7 @@ github-events-mcp version
 |---|---|
 | `github.pr.review_requested` | reason `review_requested` |
 | `github.pr.comment` | PullRequest, reason `comment`, `author` or `subscribed` |
-| `github.pr.ci_failed` | reason `ci_activity` |
+| `github.pr.ci_failed` | reason `ci_activity` (GitHub does not say pass/fail; see the notes) |
 | `github.issue.assigned` | Issue, reason `assign` |
 | `github.issue.comment` | Issue, reason `comment`, `author` or `subscribed` |
 | `github.mention` | reason `mention` or `team_mention` |
@@ -64,7 +72,7 @@ bun run build          # dist/github-events-mcp.exe (bun-windows-x64)
 - `src/cli` and `src/daemon`: commands and the local Streamable HTTP server.
 - `src/platform`: Windows Task Scheduler behind an interface with a fake.
 
-More: [`docs/notifications.md`](docs/notifications.md), [`docs/windows-checklist.md`](docs/windows-checklist.md).
+More: [`docs/install.md`](docs/install.md), [`docs/notifications.md`](docs/notifications.md), [`docs/windows-checklist.md`](docs/windows-checklist.md).
 
 ## License
 

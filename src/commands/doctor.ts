@@ -1,12 +1,13 @@
-import { configPath, permissionBits, readSecret, tokenPath } from "../config/home.ts";
+import { configPath, githubStatePath, permissionBits, readSecret, tokenPath } from "../config/home.ts";
 import { readConfig, type Config } from "../config/config.ts";
 import { booleanFlag, fail, out, parseFlags } from "../cli.ts";
 import { APP_DESCRIPTION } from "../cli.ts";
-import { MINIMUM_GH_VERSION, ghVersion, hasNotificationScope, listGhHosts, versionAtLeast } from "../platform/gh.ts";
+import { MINIMUM_GH_VERSION, ghVersion, hasNotificationScope, listGhHosts, versionAtLeast } from "../github/gh.ts";
 import { header, headerNumber, parseHttpExchange } from "../platform/httpText.ts";
 import { processRunner, type ProcessRunner } from "../platform/process.ts";
 import { createScheduler, type Scheduler } from "../platform/index.ts";
 import { portFree } from "./setup.ts";
+import { readGithubState } from "../github/state.ts";
 
 type Level = "pass" | "fail" | "skip";
 
@@ -23,6 +24,7 @@ export interface DoctorOptions {
   configFile?: string;
   tokenFile?: string;
   fetchHealth?: (port: number) => Promise<{ ok: boolean; body?: any }>;
+  githubStateFile?: string;
   offline?: boolean;
 }
 
@@ -82,7 +84,14 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<Check[]> {
         fix: process.platform === "win32" ? "reset the file ACL to the current user" : `chmod 600 "${tokenFile}"`,
       });
     } else {
-      checks.push({ name: "token permission", level: "pass", detail: "readable by the current user only" });
+      checks.push({
+        name: "token permission",
+        level: "pass",
+        detail:
+          process.platform === "win32"
+            ? "under the per-user LocalAppData folder (ACL not inspected)"
+            : "readable by the current user only",
+      });
     }
   }
 
@@ -158,6 +167,27 @@ export async function runDoctor(options: DoctorOptions = {}): Promise<Check[]> {
         checks.push({ name: `notifications ${host}`, level: "fail", detail: (error as Error).message, fix: "check gh and the network" });
       }
     }
+  }
+
+  try {
+    const github = readGithubState(options.githubStateFile ?? githubStatePath());
+    const paused = Object.entries(github.hosts).filter(([, status]) => status.paused);
+    if (paused.length) {
+      checks.push({
+        name: "github host state",
+        level: "fail",
+        detail: `${paused.map(([host]) => host).join(", ")} paused after an authentication failure`,
+        fix: "run gh auth login for that host, then restart the daemon",
+      });
+    } else {
+      const times = Object.values(github.hosts)
+        .map((status) => status.lastSuccessAt)
+        .filter((value): value is string => !!value)
+        .sort();
+      checks.push({ name: "github host state", level: "pass", detail: times.length ? `last successful poll ${times[times.length - 1]}` : "no poll recorded yet" });
+    }
+  } catch (error) {
+    checks.push({ name: "github host state", level: "fail", detail: (error as Error).message, fix: "check the state file permissions" });
   }
 
   if (config) {

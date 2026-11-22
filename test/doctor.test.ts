@@ -6,6 +6,7 @@ import { runDoctor } from "../src/commands/doctor.ts";
 import { defaultConfig, saveConfig } from "../src/config/config.ts";
 import { FakeProcessRunner } from "../src/platform/process.ts";
 import { FakeScheduler } from "../src/platform/scheduler.ts";
+import { writeGithubState } from "../src/github/state.ts";
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -117,6 +118,30 @@ describe("doctor", () => {
       fetchHealth: async () => ({ ok: false }),
     });
     expect(checks.some((check) => check.name === "config" && check.level === "fail")).toBe(true);
+  });
+
+  test("reports a paused GitHub host from the poller state", async () => {
+    const { dir, configFile, tokenFile } = setupFiles();
+    const githubStateFile = join(dir, "github-state.json");
+    writeGithubState(
+      {
+        version: 1,
+        hosts: {
+          "github.com": { paused: true, lastError: { message: "authentication failed", at: new Date().toISOString() } },
+        },
+      },
+      githubStateFile,
+    );
+    const checks = await runDoctor({
+      runner: runnerWith(),
+      scheduler: new FakeScheduler(),
+      configFile,
+      tokenFile,
+      githubStateFile,
+      fetchHealth: async () => ({ ok: true }),
+    });
+    expect(checks.some((check) => check.name === "github host state" && check.level === "fail")).toBe(true);
+    expect(checks.some((check) => check.fix?.includes("gh auth login"))).toBe(true);
   });
 
   test("--offline skips the network checks", async () => {
