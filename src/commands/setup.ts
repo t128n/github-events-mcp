@@ -19,7 +19,7 @@ import {
   type Subscription,
 } from "../config/config.ts";
 import { ask, booleanFlag, fail, listFlag, out, parseFlags, stringFlag, type FlagValues } from "../cli.ts";
-import { listGhHosts } from "../platform/gh.ts";
+import { listGhHosts } from "../github/gh.ts";
 import { processRunner, type ProcessRunner } from "../platform/process.ts";
 
 const FLAGS = {

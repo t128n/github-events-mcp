@@ -2,7 +2,7 @@ import { configPath, githubStatePath, permissionBits, readSecret, tokenPath } fr
 import { readConfig, type Config } from "../config/config.ts";
 import { booleanFlag, fail, out, parseFlags } from "../cli.ts";
 import { APP_DESCRIPTION } from "../cli.ts";
-import { MINIMUM_GH_VERSION, ghVersion, hasNotificationScope, listGhHosts, versionAtLeast } from "../platform/gh.ts";
+import { MINIMUM_GH_VERSION, ghVersion, hasNotificationScope, listGhHosts, versionAtLeast } from "../github/gh.ts";
 import { header, headerNumber, parseHttpExchange } from "../platform/httpText.ts";
 import { processRunner, type ProcessRunner } from "../platform/process.ts";
 import { createScheduler, type Scheduler } from "../platform/index.ts";
