@@ -15,10 +15,10 @@ An event-only [MCP](https://modelcontextprotocol.io) server that watches GitHub 
 ## Install
 
 ```sh
-mise use -g github:t128n/github-events-mcp@0.1.0
+MISE_MINIMUM_RELEASE_AGE=0 mise use -g github:t128n/github-events-mcp@0.1.0
 ```
 
-The release attaches `github-events-mcp-windows-x64.exe`; mise installs it as `github-events-mcp`. See [`docs/install.md`](docs/install.md).
+mise hides very new releases for 24 hours by default; the prefix skips that wait. The release attaches `github-events-mcp-windows-x64.exe`; mise installs it as `github-events-mcp`. See [`docs/install.md`](docs/install.md).
 
 ## Commands
 
