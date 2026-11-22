@@ -22,23 +22,34 @@ jobs:
         with:
           bun-version: 1.4.x
       - run: bun install --frozen-lockfile
+      - name: Check the tag matches the source version
+        run: |
+          version=$(sed -n 's/^export const VERSION = "\(.*\)";$/\1/p' src/version.ts)
+          tag="${GITHUB_REF_NAME#v}"
+          echo "tag=$tag version=$version"
+          test -n "$version"
+          test "$tag" = "$version"
       - run: bun test
       - run: bunx tsc --noEmit
       - name: Build
         run: |
           mkdir -p dist
-          bun build --compile --target=bun-windows-x64 --windows-hide-console --outfile=dist/github-events-mcp.exe src/main.ts
+          # The OS and architecture suffix is what mise uses to pick the asset.
+          # mise strips it for single-binary downloads, so the command becomes github-events-mcp.exe.
+          bun build --compile --target=bun-windows-x64 --windows-hide-console \
+            --outfile=dist/github-events-mcp-windows-x64.exe src/main.ts
       - name: Checksums
         run: |
           cd dist
-          sha256sum github-events-mcp.exe > SHA256SUMS
+          sha256sum github-events-mcp-windows-x64.exe > SHA256SUMS
           cat SHA256SUMS
       - name: Publish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "$GITHUB_REF_NAME" \
-            dist/github-events-mcp.exe \
+            dist/github-events-mcp-windows-x64.exe \
             dist/SHA256SUMS \
             --title "$GITHUB_REF_NAME" \
+            --verify-tag \
             --generate-notes

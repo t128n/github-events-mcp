@@ -12,6 +12,14 @@ An event-only [MCP](https://modelcontextprotocol.io) server that watches GitHub 
 - **Subscriptions, not a firehose.** Nothing is watched until you run `subscribe`. A notification becomes an event only when its repository matches a subscription on that host.
 - **One executable.** TypeScript on Bun, compiled to a single Windows `.exe`, with a per-user logon task. `serve` also runs on macOS and Linux for development.
 
+## Install
+
+```sh
+mise use -g github:t128n/github-events-mcp@0.1.0
+```
+
+The release attaches `github-events-mcp-windows-x64.exe`; mise installs it as `github-events-mcp`. See [`docs/install.md`](docs/install.md).
+
 ## Commands
 
 ```sh
@@ -64,7 +72,7 @@ bun run build          # dist/github-events-mcp.exe (bun-windows-x64)
 - `src/cli` and `src/daemon`: commands and the local Streamable HTTP server.
 - `src/platform`: Windows Task Scheduler behind an interface with a fake.
 
-More: [`docs/notifications.md`](docs/notifications.md), [`docs/windows-checklist.md`](docs/windows-checklist.md).
+More: [`docs/install.md`](docs/install.md), [`docs/notifications.md`](docs/notifications.md), [`docs/windows-checklist.md`](docs/windows-checklist.md).
 
 ## License
 
