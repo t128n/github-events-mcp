@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { main } from "../src/main.ts";
 import { mcpSnippet } from "../src/commands/setup.ts";
+import { DEFAULT_PORT } from "../src/config/config.ts";
 
 describe("CLI", () => {
   test("--help and version succeed", async () => {
@@ -19,8 +20,8 @@ describe("CLI", () => {
   });
 
   test("the snippet has the URL, bearer token and protocol", () => {
-    const snippet = JSON.parse(mcpSnippet(8765, "abc"));
-    expect(snippet.mcp["github-events"].url).toBe("http://127.0.0.1:8765/mcp");
+    const snippet = JSON.parse(mcpSnippet(DEFAULT_PORT, "abc"));
+    expect(snippet.mcp["github-events"].url).toBe(`http://127.0.0.1:${DEFAULT_PORT}/mcp`);
     expect(snippet.mcp["github-events"].headers.Authorization).toBe("Bearer abc");
     expect(snippet.mcp["github-events"].protocol).toBe("2026-07-28");
   });

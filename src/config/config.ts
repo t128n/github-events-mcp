@@ -15,6 +15,8 @@ export const GITHUB_EVENT_NAMES = [
 export type GithubEventName = (typeof GITHUB_EVENT_NAMES)[number];
 
 export const DEFAULT_HOST = "github.com";
+/** An uncommon registered port, in the range below the ephemeral ports. */
+export const DEFAULT_PORT = 41387;
 
 export interface Subscription {
   host: string;
@@ -45,7 +47,7 @@ export class ConfigError extends Error {
 
 export const defaultConfig = (): Config => ({
   version: 1,
-  port: 8765,
+  port: DEFAULT_PORT,
   hosts: [DEFAULT_HOST],
   defaultHost: DEFAULT_HOST,
   pollFloorSeconds: 60,

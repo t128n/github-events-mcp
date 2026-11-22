@@ -33,4 +33,4 @@ github-events-mcp doctor
 github-events-mcp install
 ```
 
-`setup` prints the MCP client snippet. `install` registers the per-user logon task. The manual Windows pass is in [`windows-checklist.md`](windows-checklist.md).
+`setup` prints the MCP client snippet. The daemon listens on `127.0.0.1:41387` by default and `setup` picks another free port if it is taken. `install` registers the per-user logon task. The manual Windows pass is in [`windows-checklist.md`](windows-checklist.md).

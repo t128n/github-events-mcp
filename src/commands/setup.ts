@@ -9,6 +9,7 @@ import {
 } from "../config/home.ts";
 import {
   DEFAULT_HOST,
+  DEFAULT_PORT,
   GITHUB_EVENT_NAMES,
   addSubscription,
   defaultConfig,
@@ -89,7 +90,7 @@ export async function runSetup(values: FlagValues, positionals: string[], option
   } catch (error) {
     return fail((error as Error).message);
   }
-  if (!port) port = await choosePort(8765);
+  if (!port) port = await choosePort(DEFAULT_PORT);
   else if (!(await portFree(port))) {
     const fallback = await choosePort(0);
     out(`Port ${port} is in use; using ${fallback} instead.`);
