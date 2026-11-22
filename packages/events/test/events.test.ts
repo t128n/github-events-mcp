@@ -13,6 +13,15 @@ afterEach(() => {
   }
 });
 
+async function waitFor(check: () => boolean, timeoutMs = 3_000): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (check()) return true;
+    await Bun.sleep(25);
+  }
+  return check();
+}
+
 function setup(everyMs = 40): { source: { start: number; everyMs: number; polls: { count: number } }; server: TestServer } {
   const source = { start: Date.now(), everyMs, polls: { count: 0 } };
   const server = startServer([tickEvent(source), pingEvent(source)], { limits: { heartbeatMs: 200, minPollMs: 20 } });
@@ -151,10 +160,9 @@ describe("stream", () => {
     controllers.push(one, two);
     await streamRequest(server.base, { name: "fake.tick", arguments: {}, cursor: null, heartbeatMs: 1000 }, one.signal);
     await streamRequest(server.base, { name: "fake.tick", arguments: {}, cursor: null, heartbeatMs: 1000 }, two.signal);
-    await Bun.sleep(150);
+    expect(await waitFor(() => server.hub.status().groups[0]?.subscribers === 2)).toBe(true);
     const groups = server.hub.status().groups;
     expect(groups.length).toBe(1);
-    expect(groups[0]!.subscribers).toBe(2);
     // More than one poll happened, but not one loop per stream.
     expect(source.polls.count).toBeLessThan(10);
   });
@@ -349,9 +357,8 @@ describe("cursors and restart", () => {
     controllers.push(one, two);
     await streamRequest(server.base, { name: "shared.event", arguments: { only: "a" }, cursor: null }, one.signal);
     await streamRequest(server.base, { name: "shared.event", arguments: { only: "b" }, cursor: null }, two.signal);
-    await Bun.sleep(80);
+    expect(await waitFor(() => server.hub.status().groups[0]?.subscribers === 2)).toBe(true);
     expect(server.hub.status().groups.length).toBe(1);
-    expect(server.hub.status().groups[0]!.subscribers).toBe(2);
   });
 });
 
@@ -397,11 +404,9 @@ test("closing the last stream stops a non-keepalive loop", async () => {
   const controller = new AbortController();
   controllers.push(controller);
   await streamRequest(server.base, { name: "fake.tick", cursor: null }, controller.signal);
-  await Bun.sleep(80);
-  expect(server.hub.status().groups[0]!.subscribers).toBe(1);
+  expect(await waitFor(() => server.hub.status().groups[0]?.subscribers === 1)).toBe(true);
   controller.abort();
-  await Bun.sleep(80);
-  expect(server.hub.status().groups.length).toBe(0);
+  expect(await waitFor(() => server.hub.status().groups.length === 0)).toBe(true);
 });
 
 test("the hub survives a broken state file", async () => {
