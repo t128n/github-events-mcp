@@ -7,6 +7,9 @@ export const GITHUB_EVENT_NAMES = [
   "github.issue.assigned",
   "github.issue.comment",
   "github.mention",
+  "github.issue.created",
+  "github.pr.created",
+  "github.ci.failed",
 ] as const;
 
 export type GithubEventName = (typeof GITHUB_EVENT_NAMES)[number];

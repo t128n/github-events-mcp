@@ -85,7 +85,7 @@ describe("GitHub source through the daemon", () => {
       ...defaultConfig(),
       port: await choosePort(0),
       pollFloorSeconds: 0.05,
-      subscriptions: [{ host: "github.com", repo: "owner/*" }],
+      subscriptions: [{ host: "github.com", repo: "owner/*", events: ["github.mention"] }],
     };
     const daemon = await start(config, runner, join(dir, "github-state.json"));
 
@@ -118,7 +118,7 @@ describe("GitHub source through the daemon", () => {
       ...defaultConfig(),
       port: await choosePort(0),
       pollFloorSeconds: 0.05,
-      subscriptions: [{ host: "github.com", repo: "owner/*" }],
+      subscriptions: [{ host: "github.com", repo: "owner/*", events: ["github.mention"] }],
     };
     const daemon = await start(config, runner, join(temp(), "github-state.json"));
     await Bun.sleep(400);
