@@ -13,6 +13,12 @@ Or follow the latest release:
 mise install github:t128n/github-events-mcp@latest
 ```
 
+mise hides very new releases for its `minimum_release_age` setting (24 hours by default). If `mise ls-remote` says the release is hidden, either wait, or opt out for this install:
+
+```sh
+MISE_MINIMUM_RELEASE_AGE=0 mise install github:t128n/github-events-mcp@0.1.0
+```
+
 The GitHub release attaches one file, `github-events-mcp-windows-x64.exe`. mise detects the `windows` and `x64` part, downloads it, and puts it on `PATH` as `github-events-mcp`. The tool is Windows-only; a mise install on macOS or Linux has no matching release asset.
 
 If mise ever picks the checksum file or the wrong asset:
