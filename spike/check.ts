@@ -1,5 +1,5 @@
 /** Talks to the spike server like a client would. Run: bun spike/check.ts (starts its own server on a free port). */
-process.env.SPIKE_EVERY_MS = "1000"; // must be set before the server module loads
+process.env.SPIKE_EVERY_MS = "2000"; // must be set before the server module loads
 const { start } = await import("./server.ts");
 const s = start(0);
 const base = `http://127.0.0.1:${s.port}/mcp`;
@@ -22,7 +22,7 @@ ok("foreign origin is 403", foreign.status === 403);
 
 const p1 = await rpc("events/poll", { name: "fake.tick", cursor: null }, 3, { "mcp-name": "fake.tick" });
 ok("first poll (null) starts from now, no events", p1.result?.events?.length === 0 && typeof p1.result.cursor === "string", p1);
-await Bun.sleep(2300);
+await Bun.sleep(4300);
 const p2 = await rpc("events/poll", { name: "fake.tick", cursor: p1.result.cursor }, 4, { "mcp-name": "fake.tick" });
 const ids = (p2.result?.events ?? []).map((e: any) => e.eventId);
 ok("second poll returns the ticks since, in order", ids.length >= 2 && ids.every((x: string, i: number) => i === 0 || Number(x.slice(5)) === Number(ids[i - 1].slice(5)) + 1), p2);
@@ -35,7 +35,7 @@ const ac = new AbortController();
 const res = await fetch(base, { method: "POST", signal: ac.signal, headers: H({ "mcp-name": "fake.tick" }), body: JSON.stringify({ jsonrpc: "2.0", id: 7, method: "events/stream", params: { name: "fake.tick", arguments: {}, cursor: null, heartbeatMs: 1000 } }) });
 ok("stream answers with text/event-stream", res.headers.get("content-type")?.startsWith("text/event-stream") === true);
 const seen: string[] = []; let buf = ""; const dec = new TextDecoder();
-const deadline = Date.now() + 3500;
+const deadline = Date.now() + 5000;
 try {
   for await (const chunk of res.body as any) {
     buf += dec.decode(chunk, { stream: true });
