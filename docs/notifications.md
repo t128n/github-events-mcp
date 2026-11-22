@@ -1,6 +1,6 @@
-# How the notifications poller talks to GitHub
+# How the pollers talk to GitHub
 
-The poller runs `gh`; it never opens a socket to GitHub itself and never reads a token. One loop per subscribed host calls the notifications API, maps notifications to events and advances an opaque cursor.
+The pollers run `gh`; they never open a socket to GitHub themselves and never read a token. One loop per subscribed host calls the notifications API. A second loop polls subscribed repositories for created issues and pull requests and for branch CI. Each loop has its own opaque cursor.
 
 ## The request
 
@@ -67,12 +67,59 @@ GitHub's API documentation says `ci_activity` means "a workflow run that you tri
 
 ### Other subject types
 
-Observed in a real inbox: `Issue`, `PullRequest`. `CheckSuite` is the subject for CI notifications. Discussions can carry mentions; Releases and subscription-only notifications do not map to any of the six events. These were **not** observed in the test inbox, so the handling is based on the API shape and is marked unverified.
+Observed in a real inbox: `Issue`, `PullRequest`. `CheckSuite` is the subject for CI notifications. Discussions can carry mentions; Releases and subscription-only notifications do not map to any notification event. These were **not** observed in the test inbox, so the handling is based on the API shape and is marked unverified.
+
+## Created items
+
+A notification cannot tell "created" from "commented": it is a thread, not an action. Created items come from the repository issues API instead.
+
+```sh
+gh api -i --hostname github.com \
+  "/repos/owner/repo/issues?state=all&sort=created&direction=desc&per_page=100&since=<cursor>" \
+  -H "Accept: application/vnd.github+json" \
+  -H 'If-None-Match: W/"..."'
+```
+
+- The response contains both issues and pull requests; a pull request has a `pull_request` field.
+- The cursor is the newest `created_at` that was handled plus the `since` value, the validators and a bounded set of seen item ids. A same-second item is not lost. The `since` window carries a ten-minute overlap so a delayed poll or a briefly lagging API does not create a hole.
+- On a `200` the `since` window moves forward and the next request is unconditional once; on a quiet poll the same URL and ETag produce `304`, which does not count against the primary rate limit.
+- A baseline poll starts from now and discards the items it sees.
+
+## Branch CI
+
+Notifications only say `ci_activity` and cannot tell pass from fail or name the branch. `github.ci.failed` comes from the Actions runs API.
+
+```sh
+gh api -i --hostname github.com \
+  "/repos/owner/repo/actions/runs?status=completed&per_page=100&sort=updated&direction=desc" \
+  -H "Accept: application/vnd.github+json" \
+  -H 'If-None-Match: W/"..."'
+```
+
+- Failure-like conclusions: `failure`, `timed_out`, `action_required`, `startup_failure`. A cancelled, skipped, neutral or successful run emits nothing.
+- Payload: `host`, `repo`, `branch`, `workflow`, `conclusion`, `event`, `runId`, `attempt`, `url`, `updatedAt`. The branch is `head_branch`. A push run on the default branch has `event: "push"` and `branch: "main"` (or whatever the default is); a pull-request run has `event: "pull_request"` and the head branch.
+- Dedupe is by `runId:attempt`, so a re-run is a new event.
+- A baseline poll starts from now and records the current runs without emitting.
+
+## Wildcards and cost
+
+- An exact subscription (`owner/repo`) polls that one repository.
+- `owner/*` resolves the owner through `/orgs/{owner}/repos`, falling back to `/users/{owner}/repos`, and caches the list for ten minutes. The cap is 100 repositories per owner.
+- Each wanted repository costs two requests per interval at most: issues and Actions runs. Conditional `304` responses do not count against the primary rate limit. A large wildcard is still more expensive than a few exact subscriptions; prefer exact repositories when you can.
+
+## What was verified
+
+Beyond the notification checks above, against public repositories on `github.com` with `gh 2.101.0`:
+
+- `GET /repos/.../issues` returned `200` with `ETag` and `Cache-Control: private, max-age=60`; the same request with the ETag returned `304`.
+- `GET /repos/.../actions/runs?status=completed` returned `200` with `ETag`; the same request with the ETag returned `304`. Runs included `head_branch`, `conclusion` and `event`.
+- `/orgs/owner/repos` returned `200` for an organisation and `404` for a user, where `/users/owner/repos` returned `200`.
 
 ## Limits to document for users
 
-- Only what GitHub turns into a notification: subscribed, watched or participating threads.
-- CI notifications depend on the user's notification settings.
+- Notifications only cover subscribed, watched or participating threads.
+- Created items and CI are polled per subscribed repository, not per notification.
+- CI notifications depend on the user's notification settings; `github.ci.failed` does not.
 - Latency is up to one poll interval, about a minute by default.
-- One page of 50 notifications per host per poll. A larger backlog is reported as `truncated` rather than silently paginated in a loop.
+- One page of 50 notifications per host per poll. A larger notification backlog is reported as `truncated` rather than silently paginated in a loop. Created and CI pages are up to 100 items and also report `truncated`.
 - Auth failures pause that host; `doctor` says which one.

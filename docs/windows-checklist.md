@@ -74,6 +74,8 @@ github-events-mcp subscriptions
 - [ ] The running daemon picks it up without a restart (`/health` shows one subscription).
 - [ ] Trigger a review request, a comment or a mention from another account.
 - [ ] The event appears within about one poll interval in the MCP client. Payload has `host`, `repo`, `reason`, `subjectType`, `title`, `url`, `updatedAt`, `threadId`; no body.
+- [ ] Create an issue and a pull request in the subscribed repository. Confirm `github.issue.created` and `github.pr.created` arrive once each.
+- [ ] Push a failing workflow to `main`. Confirm `github.ci.failed` has `branch: "main"` and `conclusion: "failure"`; a passing run emits nothing.
 
 ```powershell
 github-events-mcp unsubscribe <owner>/<repo> --host github.com
