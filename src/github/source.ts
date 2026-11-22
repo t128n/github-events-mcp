@@ -571,24 +571,37 @@ function finish(
   context: PollContext,
   floorMs: number,
 ): EventPollResult {
-  const events = [...collected.values()].sort((a, b) =>
+  const capped = capPerName([...collected.values()], context.maxEvents);
+  const events = capped.events.sort((a, b) =>
     a.timestamp === b.timestamp ? a.eventId.localeCompare(b.eventId) : a.timestamp.localeCompare(b.timestamp),
   );
-  let limited = events;
-  let gap = truncated;
-  if (limited.length > context.maxEvents) {
-    limited = limited.slice(0, context.maxEvents);
-    gap = true;
-  }
   const nextPollMs = Math.max(floorMs, intervals.length ? Math.min(...intervals) : floorMs);
   return {
-    events: limited,
+    events,
     cursor,
     hasMore: false,
     nextPollMs,
-    truncated: gap,
+    truncated: truncated || capped.dropped,
     ...(errors.length ? { errors } : {}),
   };
+}
+
+/** Keep the newest `limit` occurrences of each event name, so one busy name cannot starve another. */
+function capPerName(events: EventOccurrence<any>[], limit: number): { events: EventOccurrence<any>[]; dropped: boolean } {
+  const groups = new Map<string, EventOccurrence<any>[]>();
+  for (const event of events) {
+    const list = groups.get(event.name);
+    if (list) list.push(event);
+    else groups.set(event.name, [event]);
+  }
+  let dropped = false;
+  const kept: EventOccurrence<any>[] = [];
+  for (const list of groups.values()) {
+    list.sort((a, b) => (a.timestamp === b.timestamp ? a.eventId.localeCompare(b.eventId) : a.timestamp.localeCompare(b.timestamp)));
+    if (list.length > limit) dropped = true;
+    kept.push(...list.slice(-limit));
+  }
+  return { events: kept, dropped };
 }
 
 function summarize(

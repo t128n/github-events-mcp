@@ -118,8 +118,13 @@ export class EventHub {
     if (!definition) throw notFound("event");
     const cleanArgs = validateArguments(definition.inputSchema, args);
     const limit = clamp(Math.floor(maxEvents ?? this.limits.maxEventsPerPoll), 1, this.limits.maxEventsPerPoll);
+    // Several event names can share an upstream group. Give the source room for each name,
+    // then filter and cap to the requested name; otherwise one busy name can starve another.
+    const groupName = definition.group ?? definition.name;
+    const groupSize = Math.max(1, [...this.definitions.values()].filter((event) => (event.group ?? event.name) === groupName).length);
+    const sourceLimit = limit * groupSize;
     const result = await definition.poll(cursor, cleanArgs, {
-      maxEvents: limit,
+      maxEvents: sourceLimit,
       now: this.now(),
     });
     return this.cleanResult(definition, cleanArgs, result, limit);
@@ -435,10 +440,11 @@ class GroupLoop {
     );
     if (result.truncated) this.truncated = true;
 
-    let dropped = false;
-    const batch = result.events.slice(0, this.limits.maxEventsPerPoll);
-    if (result.events.length > batch.length) dropped = true;
-    for (const event of batch) {
+    // A shared group may carry several event names. Cap per name instead of letting a busy
+    // name crowd out the others in the same poll result.
+    const capped = capPerName(result.events, this.limits.maxEventsPerPoll);
+    let dropped = capped.dropped;
+    for (const event of capped.events) {
       if (!this.definitions.has(event.name)) {
         this.log(`ignoring event ${event.name}: not in group ${this.group}`);
         continue;
@@ -572,4 +578,22 @@ export function stableStringify(value: unknown): string {
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
+}
+
+/** Keep the newest `limit` occurrences of each event name. */
+export function capPerName(events: EventOccurrence[], limit: number): { events: EventOccurrence[]; dropped: boolean } {
+  const groups = new Map<string, EventOccurrence[]>();
+  for (const event of events) {
+    const list = groups.get(event.name);
+    if (list) list.push(event);
+    else groups.set(event.name, [event]);
+  }
+  let dropped = false;
+  const kept: EventOccurrence[] = [];
+  for (const list of groups.values()) {
+    list.sort((a, b) => (a.timestamp === b.timestamp ? a.eventId.localeCompare(b.eventId) : a.timestamp.localeCompare(b.timestamp)));
+    if (list.length > limit) dropped = true;
+    kept.push(...list.slice(-limit));
+  }
+  return { events: kept, dropped };
 }
