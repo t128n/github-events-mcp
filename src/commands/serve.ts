@@ -6,7 +6,7 @@ import { type SourceFactory } from "../daemon/source.ts";
 import { createGithubSource } from "../github/source.ts";
 
 const FLAGS = {
-  port: { type: "string", arg: "port", description: "listen on this port instead of the config's" },
+  port: { type: "string", arg: "port", description: "listen on this port instead of the config's (default from setup)" },
   token: { type: "string", arg: "token", description: "use this bearer token instead of the token file" },
   "no-watch": { type: "boolean", description: "do not reload when the config file changes" },
 } as const;

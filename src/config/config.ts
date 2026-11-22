@@ -15,6 +15,10 @@ export const GITHUB_EVENT_NAMES = [
 export type GithubEventName = (typeof GITHUB_EVENT_NAMES)[number];
 
 export const DEFAULT_HOST = "github.com";
+/** An uncommon registered port, not an ephemeral one and not 28471. */
+export const DEFAULT_PORT = 41387;
+/** Ports the server refuses to use, even if a config already contains one. */
+export const RESERVED_PORTS = new Set([28471]);
 
 export interface Subscription {
   host: string;
@@ -45,7 +49,7 @@ export class ConfigError extends Error {
 
 export const defaultConfig = (): Config => ({
   version: 1,
-  port: 8765,
+  port: DEFAULT_PORT,
   hosts: [DEFAULT_HOST],
   defaultHost: DEFAULT_HOST,
   pollFloorSeconds: 60,
@@ -70,6 +74,7 @@ export function validateConfig(value: unknown): Config {
   if (typeof port !== "number" || !Number.isInteger(port) || port < 1 || port > 65535) {
     throw new ConfigError("config.port must be an integer between 1 and 65535");
   }
+  if (RESERVED_PORTS.has(port)) throw new ConfigError(`config.port ${port} is reserved; choose another port`);
   if (!Array.isArray(value.hosts) || value.hosts.length === 0) throw new ConfigError("config.hosts must be a non-empty array");
   const hosts = value.hosts.map((host) => {
     if (typeof host !== "string" || !hostname(host)) throw new ConfigError(`config.hosts has an invalid host: ${String(host)}`);
