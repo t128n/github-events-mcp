@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 import {
   ConfigError,
   DEFAULT_PORT,
-  RESERVED_PORTS,
   addSubscription,
   defaultConfig,
   matchesAnySubscription,
@@ -20,12 +19,10 @@ describe("config validation", () => {
     expect(validateConfig(defaultConfig()).hosts).toEqual(["github.com"]);
   });
 
-  test("uses an uncommon default port and refuses the reserved one", () => {
+  test("uses an uncommon default port", () => {
     expect(DEFAULT_PORT).toBeGreaterThan(1024);
     expect(DEFAULT_PORT).toBeLessThan(49152);
-    expect(RESERVED_PORTS.has(DEFAULT_PORT)).toBe(false);
-    expect(RESERVED_PORTS.has(28471)).toBe(true);
-    expect(() => validateConfig({ ...defaultConfig(), port: 28471 })).toThrow(ConfigError);
+    expect(defaultConfig().port).toBe(DEFAULT_PORT);
   });
 
   test("rejects a bad port, host, floor and event", () => {

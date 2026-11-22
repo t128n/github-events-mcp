@@ -50,7 +50,7 @@ github-events-mcp upgrade        # Windows: run the new exe as: <new>.exe upgrad
 github-events-mcp version
 ```
 
-`setup` prints the MCP client fragment: `url` `http://127.0.0.1:<port>/mcp`, `Authorization: Bearer <token>`, protocol `2026-07-28`. The default local port is **41387**; `setup` picks another free port if that one is taken. Port 28471 is reserved.
+`setup` prints the MCP client fragment: `url` `http://127.0.0.1:<port>/mcp`, `Authorization: Bearer <token>`, protocol `2026-07-28`. The default local port is **41387**; `setup` picks another free port if that one is taken.
 
 ## Events
 

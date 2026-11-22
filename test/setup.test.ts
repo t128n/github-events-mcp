@@ -55,7 +55,6 @@ describe("setup", () => {
     expect(config.hosts).toEqual(["github.com"]);
     expect(config.defaultHost).toBe("github.com");
     expect(config.port).toBeGreaterThan(0);
-    expect(config.port).not.toBe(28471);
     expect(config.subscriptions[0]!.repo).toBe("owner/repo");
     expect(config.subscriptions[0]!.events).toEqual(["github.mention"]);
     expect(readFileSync(tokenFile, "utf8").length).toBeGreaterThan(20);
@@ -90,17 +89,6 @@ describe("setup", () => {
     });
     expect(code).toBe(0);
     expect(readConfig(join(dir, "config.json"))!.hosts).toEqual(["github.com"]);
-  });
-
-  test("refuses a reserved port", async () => {
-    const dir = temp();
-    const code = await runSetup({ host: ["github.com"], port: "28471" }, [], {
-      runner: runner(),
-      interactive: false,
-      configFile: join(dir, "config.json"),
-      tokenFile: join(dir, "token"),
-    });
-    expect(code).toBe(1);
   });
 
   test("fails clearly when gh is not signed in", async () => {

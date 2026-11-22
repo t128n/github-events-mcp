@@ -11,7 +11,6 @@ import {
   DEFAULT_HOST,
   DEFAULT_PORT,
   GITHUB_EVENT_NAMES,
-  RESERVED_PORTS,
   addSubscription,
   defaultConfig,
   normalizeEvents,
@@ -88,7 +87,6 @@ export async function runSetup(values: FlagValues, positionals: string[], option
   try {
     port = Number(stringFlag(values, "port", String(existing?.port ?? 0)));
     if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error("port must be between 1 and 65535");
-    if (RESERVED_PORTS.has(port)) throw new Error(`port ${port} is reserved; choose another port`);
   } catch (error) {
     return fail((error as Error).message);
   }
@@ -194,14 +192,11 @@ export async function portFree(port: number): Promise<boolean> {
 }
 
 export async function choosePort(preferred: number): Promise<number> {
-  if (preferred > 0 && !RESERVED_PORTS.has(preferred) && (await portFree(preferred))) return preferred;
-  for (let attempt = 0; attempt < 10; attempt++) {
-    const server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response("") });
-    const port = server.port ?? 0;
-    server.stop(true);
-    if (port > 0 && !RESERVED_PORTS.has(port)) return port;
-  }
-  throw new Error("could not find a free port");
+  if (preferred > 0 && (await portFree(preferred))) return preferred;
+  const server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response("") });
+  const port = server.port ?? 0;
+  server.stop(true);
+  return port;
 }
 
 function safeReadConfig(path: string): Config | undefined {
