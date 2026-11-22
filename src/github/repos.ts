@@ -226,10 +226,15 @@ export async function pollCreated(options: RepoPollOptions & { cursor: CreatedCu
     events.push(createdOccurrence(options.host, options.repo, issue));
   }
 
+  // Moving `since` changes the URL and invalidates the ETag. Do it only when there is
+  // something to deliver; a quiet 200 keeps the URL and its validators, so the next poll is a
+  // free 304. The first poll after a change is unconditional once.
+  const movedWindow = events.length > 0;
   const cursor: CreatedCursor = {
-    since: new Date(now() - overlapMs).toISOString(),
+    since: options.baseline || movedWindow ? new Date(now() - overlapMs).toISOString() : options.cursor.since,
     createdAt: options.baseline ? new Date(now()).toISOString() : newest,
     seen: [...seen].slice(-500),
+    ...(movedWindow ? {} : validators(response)),
   };
   return {
     cursor,

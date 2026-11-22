@@ -82,7 +82,7 @@ gh api -i --hostname github.com \
 
 - The response contains both issues and pull requests; a pull request has a `pull_request` field.
 - The cursor is the newest `created_at` that was handled plus the `since` value, the validators and a bounded set of seen item ids. A same-second item is not lost. The `since` window carries a ten-minute overlap so a delayed poll or a briefly lagging API does not create a hole.
-- On a `200` the `since` window moves forward and the next request is unconditional once; on a quiet poll the same URL and ETag produce `304`, which does not count against the primary rate limit.
+- A `200` that emits new items moves the `since` window forward; the next request is unconditional once. A quiet `200` keeps the URL and stores its ETag, so the following quiet polls are `304`, which do not count against the primary rate limit.
 - A baseline poll starts from now and discards the items it sees.
 
 ## Branch CI

@@ -119,6 +119,15 @@ describe("created events", () => {
     expect(notModified.events).toEqual([]);
   });
 
+  test("a quiet 200 keeps the validators for the next conditional poll", async () => {
+    const runner = new FakeGh(() => response(200, [], { etag: 'W/"quiet"', "last-modified": "Thu, 01 Jan 2026 00:00:00 GMT" }));
+    const cursor: CreatedCursor = { since: "2026-01-02T03:59:00Z", createdAt: "2026-01-02T04:00:00Z" };
+    const result = await pollCreated({ runner, host: "github.com", repo: "owner/repo", floorMs: 60_000, cursor, now: () => Date.parse("2026-01-02T04:01:00Z") });
+    expect(result.events).toEqual([]);
+    expect(result.cursor.etag).toBe('W/"quiet"');
+    expect(result.cursor.since).toBe(cursor.since);
+  });
+
   test("filters by repository and author", () => {
     const data = {
       host: "github.com",
