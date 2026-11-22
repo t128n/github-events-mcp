@@ -239,6 +239,31 @@ describe("stream", () => {
   });
 });
 
+describe("shared groups", () => {
+  test("a busy event name does not starve another name in the same group", async () => {
+    const polls = { count: 0 };
+    const poll = async (cursor: string | null, _args: Record<string, unknown>, ctx: { now: number }) => {
+      polls.count++;
+      const events = [];
+      for (let n = 0; n < 10; n++) {
+        events.push({ eventId: `a-${n}`, name: "group.a", timestamp: new Date(ctx.now).toISOString(), data: { n } });
+      }
+      events.push({ eventId: "b-1", name: "group.b", timestamp: new Date(ctx.now).toISOString(), data: { n: 1 } });
+      return { events, cursor: cursor ?? "start", hasMore: false, nextPollMs: 1_000 };
+    };
+    const hub = new EventHub({
+      events: [
+        defineEvent({ name: "group.a", description: "busy", group: "group", shared: true, poll }),
+        defineEvent({ name: "group.b", description: "quiet", group: "group", shared: true, poll }),
+      ],
+      serverInfo: { name: "test", version: "0" },
+    });
+    const result = await hub.poll("group.b", {}, null, 1);
+    expect(result.events.map((event) => event.name)).toEqual(["group.b"]);
+    expect(result.events).toHaveLength(1);
+  });
+});
+
 describe("cursors and restart", () => {
   test("a restart resumes from the stored cursor without replaying or skipping", async () => {
     const store = new MemoryStateStore();

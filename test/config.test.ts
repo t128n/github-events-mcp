@@ -4,6 +4,7 @@ import {
   addSubscription,
   defaultConfig,
   matchesAnySubscription,
+  normalizeEvents,
   normalizeRepoPattern,
   removeSubscription,
   subscriptionMatches,
@@ -37,6 +38,14 @@ describe("config validation", () => {
         subscriptions: [{ host: "github.example.com", repo: "owner/repo" }],
       }),
     ).toThrow(ConfigError);
+  });
+
+  test("accepts the created and CI event names", () => {
+    expect(normalizeEvents(["github.issue.created", "github.pr.created", "github.ci.failed"])).toEqual([
+      "github.issue.created",
+      "github.pr.created",
+      "github.ci.failed",
+    ]);
   });
 
   test("accepts owner/* and normalises case", () => {
