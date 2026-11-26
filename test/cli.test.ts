@@ -25,4 +25,15 @@ describe("CLI", () => {
     expect(snippet.mcp["github-events"].headers.Authorization).toBe("Bearer abc");
     expect(snippet.mcp["github-events"].protocol).toBe("2026-07-28");
   });
+
+  test("build configurations do not hide the Windows console so CLI output is visible", async () => {
+    const pkg = await Bun.file("package.json").json();
+    expect(pkg.scripts.build).not.toContain("--windows-hide-console");
+
+    const ci = await Bun.file(".github/workflows/ci.yml").text();
+    expect(ci).not.toContain("--windows-hide-console");
+
+    const release = await Bun.file(".github/workflows/release.yml").text();
+    expect(release).not.toContain("--windows-hide-console");
+  });
 });

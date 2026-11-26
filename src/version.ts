@@ -1,4 +1,4 @@
-export const VERSION = "0.2.0";
+export const VERSION = "0.2.1";
 export const NAME = "github-events-mcp";
 
 /** Numeric comparison for `1.2.3` (an optional leading `v` and a `-suffix` are tolerated). */
