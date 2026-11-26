@@ -1,6 +1,6 @@
 {
   "name": "github-events-mcp",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "type": "module",
   "description": "Event-only MCP server for GitHub notifications",
@@ -9,7 +9,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "bun build --compile --target=bun-windows-x64 --windows-hide-console --outfile=dist/github-events-mcp.exe src/main.ts",
+    "build": "bun build --compile --target=bun-windows-x64 --outfile=dist/github-events-mcp.exe src/main.ts",
     "build:local": "bun build --compile --outfile=dist/github-events-mcp src/main.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
